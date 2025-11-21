@@ -26,3 +26,6 @@ Bot for automatic user verification when joining private Telegram channels using
 3. User has 10 minutes to respond
 4. On correct answer - request is approved
 5. On incorrect answer or timeout - request is rejected
+
+## Test
+https://t.me/+skoQ1RFDHJIyMDRi
