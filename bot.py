@@ -17,21 +17,32 @@ timers: Dict[int, asyncio.Task] = {}
 
 
 def generate_captcha() -> Tuple[str, int, list]:
-    a = random.randint(1, 20)
-    b = random.randint(1, 20)
+    mode = getattr(config, "CAPTCHA_MODE", "math")
+    if mode == "custom":
+        custom = getattr(config, "CUSTOM_CAPTCHA", {})
+        question = custom.get("question")
+        options = custom.get("options")
+        correct_index = custom.get("correct_index")
+        if not question or not options or len(options) < 2:
+            raise ValueError("Invalid custom captcha configuration")
+        if correct_index is None or not 0 <= correct_index < len(options):
+            raise ValueError("Invalid custom captcha correct index")
+        return question, correct_index, options
+    min_value, max_value = getattr(config, "MATH_RANGE", (1, 20))
+    a = random.randint(min_value, max_value)
+    b = random.randint(min_value, max_value)
     correct_answer = a + b
     question = f"{a} + {b}"
-    
     wrong_answers = []
+    lower_bound = min_value
+    upper_bound = max_value * 2
     while len(wrong_answers) < 3:
-        wrong = random.randint(1, 40)
+        wrong = random.randint(lower_bound, upper_bound)
         if wrong != correct_answer and wrong not in wrong_answers:
             wrong_answers.append(wrong)
-    
     all_answers = [correct_answer] + wrong_answers
     random.shuffle(all_answers)
     correct_index = all_answers.index(correct_answer)
-    
     return question, correct_index, all_answers
 
 
@@ -44,7 +55,7 @@ async def send_captcha_poll(user_id: int, chat_id: int):
             question=question,
             options=[str(ans) for ans in answers],
             is_anonymous=False,
-            open_period=600
+            open_period=open_period
         )
         
         pending_requests[user_id] = {
